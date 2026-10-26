@@ -1126,12 +1126,17 @@ function AdminDashboard({ students, setStudents, onLogout }) {
         {/* Student Database Table */}
         <div className="bg-slate-900/70 backdrop-blur-sm border border-slate-800 rounded-2xl overflow-hidden">
           <div className="p-4 border-b border-slate-800 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <FileText className="w-5 h-5 text-slate-400" />
               <h2 className="text-base font-bold text-white">Student Registry & Academic Performance</h2>
               <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">{displayed.length} records</span>
+              {isCloudEnabled && (
+                <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Cloud Live
+                </span>
+              )}
             </div>
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto items-center">
               <div className="relative flex-1 sm:flex-none sm:w-56">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, roll, dept..." className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition placeholder-slate-600" />
@@ -1156,11 +1161,11 @@ function AdminDashboard({ students, setStudents, onLogout }) {
                   setTimeout(() => setSyncing(false), 400);
                 }}
                 disabled={syncing}
-                className="bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 border border-slate-700"
-                title="Sync with Supabase Cloud Database"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm shadow-emerald-900/50"
+                title="Sync and load live student records from Supabase Cloud"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync Cloud'}</span>
+                <span>{syncing ? 'Syncing...' : 'Sync Cloud'}</span>
               </button>
               <button onClick={() => exportToCSV(displayed)} className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1 border border-slate-700">
                 <Download className="w-3.5 h-3.5" /> CSV
@@ -1448,6 +1453,13 @@ function LoginPage({ onLogin, students, onStudentRegistered }) {
             <button onClick={() => setMode("signup")} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30">
               <UserCheck className="w-5 h-5" /> New Student Registration (Sign Up)
             </button>
+
+            <div className="pt-1 flex items-center justify-center">
+              <span className={`inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-full border ${isCloudEnabled ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                <span className={`w-2 h-2 rounded-full ${isCloudEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                {isCloudEnabled ? `Cloud Database: ${students.length} Live Students` : 'Local Mode'}
+              </span>
+            </div>
 
             {/* Quick Demo Access Bar */}
             <div className="pt-4 border-t border-slate-800">
