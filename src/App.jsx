@@ -1,10 +1,17 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
+  isCloudEnabled,
+  fetchStudentsFromCloud,
+  insertStudentToCloud,
+  updateStudentInCloud,
+  deleteStudentFromCloud
+} from './supabase';
+import {
   Users, GraduationCap, TrendingUp, AlertTriangle, Search, Plus, Trash2, Edit3,
   Sparkles, BrainCircuit, Download, CheckCircle2, BarChart3, X, Send, ChevronDown,
   ChevronUp, Eye, MessageCircle, ArrowUpDown, BookOpen, Activity, Target, Zap,
   Shield, Clock, Star, FileText, UserCheck, AlertCircle, Info, Menu, Home,
-  LogOut, Settings, Bell, Calendar, Award, CheckSquare, Compass, RefreshCw
+  LogOut, Settings, Bell, Calendar, Award, CheckSquare, Compass, RefreshCw, Cloud, Database
 } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════
@@ -726,6 +733,10 @@ function StudentDashboard({ student, onLogout }) {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border ${isCloudEnabled ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+              <span className={`w-2 h-2 rounded-full ${isCloudEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+              {isCloudEnabled ? 'Cloud Database Connected' : 'Local Storage Mode'}
+            </div>
             <button onClick={() => setCopilotOpen(true)} className="flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-lg shadow-cyan-900/40">
               <Sparkles className="w-4 h-4" /> AI Study Mentor
             </button>
@@ -1012,9 +1023,12 @@ function AdminDashboard({ students, setStudents, onLogout }) {
     let updated;
     if (data.id) {
       updated = students.map(s => s.id === data.id ? data : s);
+      if (isCloudEnabled) updateStudentInCloud(data.id, data);
     } else {
       const newId = students.length ? Math.max(...students.map(s => s.id)) + 1 : 1;
-      updated = [...students, { ...data, id: newId }];
+      const created = { ...data, id: newId };
+      updated = [...students, created];
+      if (isCloudEnabled) insertStudentToCloud(created);
     }
     setStudents(updated);
     saveStoredStudents(updated);
@@ -1026,6 +1040,7 @@ function AdminDashboard({ students, setStudents, onLogout }) {
     const updated = students.filter(s => s.id !== id);
     setStudents(updated);
     saveStoredStudents(updated);
+    if (isCloudEnabled) deleteStudentFromCloud(id);
     setDeleteConfirm(null);
   };
 
@@ -1044,6 +1059,10 @@ function AdminDashboard({ students, setStudents, onLogout }) {
             <h1 className="text-sm font-bold text-white hidden sm:block">AI Student Analysis Portal — Academic Faculty Node</h1>
           </div>
           <div className="flex items-center gap-2">
+            <div className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border ${isCloudEnabled ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+              <span className={`w-2 h-2 rounded-full ${isCloudEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+              {isCloudEnabled ? 'Cloud Database Connected' : 'Local Storage Mode'}
+            </div>
             <button onClick={() => setCopilotOpen(true)} className="flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition shadow-lg shadow-cyan-900/30">
               <Sparkles className="w-3.5 h-3.5" /> AI Copilot
             </button>
@@ -1548,11 +1567,28 @@ export default function App() {
   const [students, setStudents] = useState(getStoredStudents);
   const [auth, setAuth] = useState(null); // null | { role: "admin" } | { role: "student", student: Object }
 
-  // Sync state to localStorage whenever students array updates
+  // Load shared records from Supabase Cloud Database on startup
+  useEffect(() => {
+    async function loadCloudRecords() {
+      if (isCloudEnabled) {
+        const cloudData = await fetchStudentsFromCloud();
+        if (cloudData && cloudData.length > 0) {
+          setStudents(cloudData);
+          saveStoredStudents(cloudData);
+        }
+      }
+    }
+    loadCloudRecords();
+  }, []);
+
+  // Sync state to localStorage & Supabase Cloud whenever students register
   const handleStudentRegistered = (newStudent) => {
     const updated = [...students, newStudent];
     setStudents(updated);
     saveStoredStudents(updated);
+    if (isCloudEnabled) {
+      insertStudentToCloud(newStudent);
+    }
   };
 
   // If not logged in, show Auth / Home / Signup
