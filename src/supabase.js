@@ -62,32 +62,38 @@ export async function insertStudentToCloud(s) {
   try {
     const payload = {
       name: s.name,
-      rollno: s.rollno,
+      rollno: s.rollno.trim().toUpperCase(),
       password: s.password || 'password123',
       father: s.father || '',
       phone: s.phone || '',
       email: s.email || '',
-      department: s.department,
-      semester: s.semester,
-      passing_year: s.passing_year,
-      college: s.college,
-      university: s.university,
-      marks: s.marks,
-      percentage: s.percentage,
-      attendance: s.attendance,
-      midterm: s.midterm,
-      lab_score: s.labScore,
-      assignments_completed: s.assignmentsCompleted,
-      risk_score: s.riskScore || 0,
-      risk_category: typeof s.riskCategory === 'object' ? s.riskCategory.label : (s.riskCategory || 'Safe')
+      department: s.department || 'Computer Science',
+      semester: parseInt(s.semester) || 5,
+      passing_year: parseInt(s.passing_year) || 2028,
+      college: s.college || 'NIT Trichy',
+      university: s.university || 'Anna University',
+      marks: parseInt(s.marks) || 0,
+      percentage: parseFloat(s.percentage) || 0,
+      attendance: parseInt(s.attendance) || 0,
+      midterm: parseInt(s.midterm) || 0,
+      lab_score: parseInt(s.labScore || s.lab_score) || 0,
+      assignments_completed: parseInt(s.assignmentsCompleted || s.assignments_completed) || 0,
+      risk_score: parseInt(s.riskScore || s.risk_score) || 0,
+      risk_category: typeof s.riskCategory === 'object' ? s.riskCategory.label : (s.riskCategory || s.risk_category || 'Safe')
     };
+
+    console.log('Sending payload to Supabase:', payload);
 
     const { data, error } = await supabase
       .from('student_records')
-      .insert([payload])
+      .upsert([payload], { onConflict: 'rollno' })
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error inserting student:', error);
+      throw error;
+    }
+    console.log('Successfully saved to Supabase:', data);
     return data && data[0] ? data[0] : null;
   } catch (err) {
     console.error('Failed to insert into cloud:', err);
@@ -103,30 +109,29 @@ export async function updateStudentInCloud(id, s) {
   try {
     const payload = {
       name: s.name,
-      rollno: s.rollno,
-      password: s.password,
-      father: s.father,
-      phone: s.phone,
-      email: s.email,
+      rollno: s.rollno.trim().toUpperCase(),
+      password: s.password || 'password123',
+      father: s.father || '',
+      phone: s.phone || '',
+      email: s.email || '',
       department: s.department,
-      semester: s.semester,
-      passing_year: s.passing_year,
+      semester: parseInt(s.semester) || 5,
+      passing_year: parseInt(s.passing_year) || 2028,
       college: s.college,
       university: s.university,
-      marks: s.marks,
-      percentage: s.percentage,
-      attendance: s.attendance,
-      midterm: s.midterm,
-      lab_score: s.labScore,
-      assignments_completed: s.assignmentsCompleted,
-      risk_score: s.riskScore || 0,
-      risk_category: typeof s.riskCategory === 'object' ? s.riskCategory.label : (s.riskCategory || 'Safe')
+      marks: parseInt(s.marks) || 0,
+      percentage: parseFloat(s.percentage) || 0,
+      attendance: parseInt(s.attendance) || 0,
+      midterm: parseInt(s.midterm) || 0,
+      lab_score: parseInt(s.labScore || s.lab_score) || 0,
+      assignments_completed: parseInt(s.assignmentsCompleted || s.assignments_completed) || 0,
+      risk_score: parseInt(s.riskScore || s.risk_score) || 0,
+      risk_category: typeof s.riskCategory === 'object' ? s.riskCategory.label : (s.riskCategory || s.risk_category || 'Safe')
     };
 
     const { error } = await supabase
       .from('student_records')
-      .update(payload)
-      .eq('id', id);
+      .upsert([payload], { onConflict: 'rollno' });
 
     if (error) throw error;
     return true;
@@ -139,14 +144,16 @@ export async function updateStudentInCloud(id, s) {
 /**
  * Delete a student record from cloud database
  */
-export async function deleteStudentFromCloud(id) {
+export async function deleteStudentFromCloud(id, rollno) {
   if (!isCloudEnabled || !supabase) return false;
   try {
-    const { error } = await supabase
-      .from('student_records')
-      .delete()
-      .eq('id', id);
-
+    let query = supabase.from('student_records').delete();
+    if (rollno) {
+      query = query.eq('rollno', rollno);
+    } else {
+      query = query.eq('id', id);
+    }
+    const { error } = await query;
     if (error) throw error;
     return true;
   } catch (err) {

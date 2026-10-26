@@ -1019,28 +1019,41 @@ function AdminDashboard({ students, setStudents, onLogout }) {
     else { setSortField(field); setSortDir("asc"); }
   };
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     let updated;
     if (data.id) {
       updated = students.map(s => s.id === data.id ? data : s);
-      if (isCloudEnabled) updateStudentInCloud(data.id, data);
+      setStudents(updated);
+      saveStoredStudents(updated);
+      if (isCloudEnabled) {
+        await updateStudentInCloud(data.id, data);
+        const fresh = await fetchStudentsFromCloud();
+        if (fresh && fresh.length > 0) setStudents(fresh);
+      }
     } else {
       const newId = students.length ? Math.max(...students.map(s => s.id)) + 1 : 1;
       const created = { ...data, id: newId };
       updated = [...students, created];
-      if (isCloudEnabled) insertStudentToCloud(created);
+      setStudents(updated);
+      saveStoredStudents(updated);
+      if (isCloudEnabled) {
+        await insertStudentToCloud(created);
+        const fresh = await fetchStudentsFromCloud();
+        if (fresh && fresh.length > 0) setStudents(fresh);
+      }
     }
-    setStudents(updated);
-    saveStoredStudents(updated);
     setShowAddModal(false);
     setModalStudent(null);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+    const target = students.find(s => s.id === id);
     const updated = students.filter(s => s.id !== id);
     setStudents(updated);
     saveStoredStudents(updated);
-    if (isCloudEnabled) deleteStudentFromCloud(id);
+    if (isCloudEnabled) {
+      await deleteStudentFromCloud(id, target?.rollno);
+    }
     setDeleteConfirm(null);
   };
 
@@ -1582,12 +1595,17 @@ export default function App() {
   }, []);
 
   // Sync state to localStorage & Supabase Cloud whenever students register
-  const handleStudentRegistered = (newStudent) => {
+  const handleStudentRegistered = async (newStudent) => {
     const updated = [...students, newStudent];
     setStudents(updated);
     saveStoredStudents(updated);
     if (isCloudEnabled) {
-      insertStudentToCloud(newStudent);
+      await insertStudentToCloud(newStudent);
+      const fresh = await fetchStudentsFromCloud();
+      if (fresh && fresh.length > 0) {
+        setStudents(fresh);
+        saveStoredStudents(fresh);
+      }
     }
   };
 
