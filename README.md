@@ -1,11 +1,12 @@
 # 🎓 AI-Powered Student Analysis Portal
 
-> **An intelligent, modern academic diagnostic and student performance tracking web application built with React, Vite, and Tailwind CSS.**
+> **An intelligent, modern academic diagnostic and student performance tracking web application built with React, Vite, Tailwind CSS, and a live Supabase cloud database.**
 
-[![Live Demo on Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel)](https://vercel.com)
+[![Live Demo on Vercel](https://img.shields.io/badge/Vercel-Live_Demo-black?style=for-the-badge&logo=vercel)](https://vercel.com)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+[![Supabase](https://img.shields.io/badge/Supabase-Cloud_DB-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 ---
@@ -16,6 +17,7 @@ The **AI-Powered Student Analysis Portal** is a dual-perspective academic manage
 
 1. **Self-Service Student Performance Portal**: When a student signs up or logs in, they are immediately presented with their personalized academic dashboard, university attendance compliance warnings, AI predicted semester grades, root-cause diagnostics, and a tailored 4-week recovery roadmap.
 2. **Faculty & Administrative Oversight Dashboard**: Institutional mentors and department heads can track overall batch KPIs, grade distributions, department subject mastery, and identify high-dropout-risk students using our rule-based ML scoring heuristic.
+3. **Shared Cloud Database**: All student data is stored in a **live Supabase PostgreSQL cloud database**, meaning any student or teacher on any device sees the **same real-time data** — no per-device isolation.
 
 ---
 
@@ -37,7 +39,7 @@ The **AI-Powered Student Analysis Portal** is a dual-perspective academic manage
 
 ### 👨‍💼 2. Faculty & Administrative Dashboard
 - **Executive Batch KPIs**:
-  - Total Active Student Count
+  - Total Active Student Count (live from cloud)
   - Average Batch Score & Letter Grade
   - Department Attendance Average (color-coded)
   - Critical At-Risk Student Count
@@ -49,9 +51,10 @@ The **AI-Powered Student Analysis Portal** is a dual-perspective academic manage
   - Live multi-field search (by Name, Roll Number, or Department)
   - Status filters (*Critical Risk*, *Watchlist*, *Top Performers*)
   - Click-to-sort headers (Roll Number, Attendance, Score)
-  - Modal-based Add & Edit forms
+  - Modal-based Add & Edit forms (instantly saved to cloud)
   - Record deletion with confirmation guard
-  - One-click **Export to CSV** for university reports.
+  - One-click **Export to CSV** for university reports
+  - 🔄 **Sync Cloud button** — fetch the latest live records from Supabase instantly
 
 ---
 
@@ -68,6 +71,15 @@ The **AI-Powered Student Analysis Portal** is a dual-perspective academic manage
 
 ---
 
+### ☁️ 4. Live Supabase Cloud Database
+- All student records are stored in a **PostgreSQL database on Supabase**.
+- **Any device, any browser** — students and teachers see the same live data.
+- New student registrations are instantly saved to the cloud.
+- Admin edits, additions, and deletions sync to Supabase in real time.
+- Row-Level Security (RLS) policies enabled for safe public read/write access.
+
+---
+
 ## 🛠️ Technology Stack
 
 | Layer | Technologies |
@@ -76,7 +88,8 @@ The **AI-Powered Student Analysis Portal** is a dual-perspective academic manage
 | **Build Tool** | Vite 6 |
 | **Styling** | Tailwind CSS (Dark Mode, Glassmorphic UI) |
 | **Icons** | Lucide React |
-| **State & Persistence** | Browser LocalStorage (Synchronized data store) |
+| **Cloud Database** | Supabase (PostgreSQL + PostgREST API) |
+| **State & Persistence** | Supabase Cloud + Browser LocalStorage fallback |
 | **Hosting & CI/CD** | Vercel |
 
 ---
@@ -96,7 +109,16 @@ cd Student-Analysis-portal
 npm install
 ```
 
-### 3. Launch local development server
+### 3. Configure environment variables
+Create a `.env` file in the root directory:
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+> **Note:** The app ships with a live Supabase project already configured in `src/supabase.js` as a fallback. You can use it directly without a `.env` file for demo purposes.
+
+### 4. Launch local development server
 ```bash
 npm run dev
 ```
@@ -128,7 +150,10 @@ This repository is pre-configured with `vercel.json` for seamless Single Page Ap
 1. Go to [Vercel Dashboard](https://vercel.com/new).
 2. Click **Import** next to `thehardikpanchal889/Student-Analysis-portal`.
 3. Keep the default settings (Framework Preset: **Vite**).
-4. Click **Deploy**.
+4. Add your environment variables in the Vercel project settings:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+5. Click **Deploy**.
 
 ---
 
@@ -136,28 +161,55 @@ This repository is pre-configured with `vercel.json` for seamless Single Page Ap
 
 ```
 Student-Analysis-portal/
-├── index.html              # HTML Entry Point
-├── package.json            # Project dependencies & scripts
-├── postcss.config.js       # PostCSS plugins
-├── tailwind.config.js      # Tailwind theme configuration
-├── vercel.json             # Vercel SPA routing rewrites
-├── vite.config.js          # Vite build config
+├── index.html                  # HTML Entry Point
+├── package.json                # Project dependencies & scripts
+├── postcss.config.js           # PostCSS plugins
+├── tailwind.config.js          # Tailwind theme configuration
+├── vercel.json                 # Vercel SPA routing rewrites
+├── vite.config.js              # Vite build config
+├── supabase_setup_guide.sql    # SQL script to set up Supabase table & seed data
+├── .env.example                # Example environment variables
 ├── src/
-│   ├── App.jsx             # Complete, self-contained application architecture
-│   ├── index.css           # Global stylesheet & scrollbar styles
-│   └── main.jsx            # React root mount
-└── README.md               # Project documentation
+│   ├── App.jsx                 # Complete, self-contained application architecture
+│   ├── supabase.js             # Supabase client & CRUD helper functions
+│   ├── index.css               # Global stylesheet & scrollbar styles
+│   └── main.jsx                # React root mount
+└── README.md                   # Project documentation
 ```
+
+---
+
+## 🗄️ Database Schema (Supabase)
+
+The `student_records` table in Supabase has the following structure:
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `bigint` (PK) | Auto-increment primary key |
+| `name` | `text` | Student full name |
+| `rollno` | `text` | Unique roll number |
+| `password` | `text` | Login password |
+| `department` | `text` | Branch (CS, EC, ME, EE) |
+| `semester` | `int` | Current semester |
+| `marks` | `int` | Total internal marks (out of 500) |
+| `percentage` | `numeric` | Percentage score |
+| `attendance` | `int` | Attendance % |
+| `midterm` | `int` | Mid-term theory score |
+| `lab_score` | `int` | Laboratory practical score |
+| `assignments_completed` | `int` | Assignment submission % |
+| `passing_year` | `int` | Expected graduation year |
+| `college` | `text` | College name |
+| `university` | `text` | University affiliation |
 
 ---
 
 ## 👨‍💻 Author
 
-- **Hardik Panchal** - [@thehardikpanchal889](https://github.com/thehardikpanchal889)
-- Academic Mini-Project Submission
+- **Hardik Panchal** — [@thehardikpanchal889](https://github.com/thehardikpanchal889)
+- Academic Mini-Project Submission | B.Tech College Project
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - feel free to use and adapt it for academic and non-commercial purposes.
+This project is licensed under the MIT License — feel free to use and adapt it for academic and non-commercial purposes.
