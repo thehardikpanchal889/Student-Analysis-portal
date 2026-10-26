@@ -975,6 +975,23 @@ function AdminDashboard({ students, setStudents, onLogout }) {
   const [diagStudent, setDiagStudent] = useState(null);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+
+  // Automatically fetch latest live records from Cloud when Admin Dashboard mounts
+  useEffect(() => {
+    async function syncLatestFromCloud() {
+      if (isCloudEnabled) {
+        setSyncing(true);
+        const fresh = await fetchStudentsFromCloud();
+        if (fresh && fresh.length > 0) {
+          setStudents(fresh);
+          saveStoredStudents(fresh);
+        }
+        setSyncing(false);
+      }
+    }
+    syncLatestFromCloud();
+  }, []);
 
   // Enriched students with risk scores
   const enriched = useMemo(() => students.map(s => ({
@@ -1127,6 +1144,23 @@ function AdminDashboard({ students, setStudents, onLogout }) {
               </select>
               <button onClick={() => setShowAddModal(true)} className="bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5" /> Add
+              </button>
+              <button
+                onClick={async () => {
+                  setSyncing(true);
+                  const fresh = await fetchStudentsFromCloud();
+                  if (fresh && fresh.length > 0) {
+                    setStudents(fresh);
+                    saveStoredStudents(fresh);
+                  }
+                  setTimeout(() => setSyncing(false), 400);
+                }}
+                disabled={syncing}
+                className="bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 border border-slate-700"
+                title="Sync with Supabase Cloud Database"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{syncing ? 'Syncing...' : 'Sync Cloud'}</span>
               </button>
               <button onClick={() => exportToCSV(displayed)} className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1 border border-slate-700">
                 <Download className="w-3.5 h-3.5" /> CSV
